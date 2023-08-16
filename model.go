@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -17,6 +16,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -85,6 +85,7 @@ type Model struct {
 	ListStyle    SnippetsBaseStyle
 	FoldersStyle FoldersBaseStyle
 	ContentStyle ContentBaseStyle
+	renderer     *glamour.TermRenderer
 }
 
 // Init initialzes the application model.
@@ -464,16 +465,23 @@ func (m *Model) updateContentView(msg updateContentMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	m.renderer, _ = glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(m.Code.Width),
+	)
+
+	glamContent, _ := m.renderer.Render(string(content))
+
 	// b.WriteString(string(content))
-	err = quick.Highlight(&b, string(content), msg.Language, "terminal16m", m.config.Theme)
-	if err != nil {
-		m.displayError("Unable to highlight file.")
-		return m, nil
-	}
+	// err = quick.Highlight(&b, string(content), msg.Language, "terminal16m", m.config.Theme)
+	// if err != nil {
+	// 	m.displayError("Unable to highlight file.")
+	// 	return m, nil
+	// }
 
 	s := b.String()
 	m.writeLineNumbers(lipgloss.Height(s))
-	m.Code.SetContent(s)
+	m.Code.SetContent(glamContent)
 	return m, nil
 }
 
